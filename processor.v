@@ -1,7 +1,7 @@
 //=========================================================================
 // Name & Email must be EXACTLY as in Gradescope roster!
-// Name: 
-// Email: 
+// Name: Fernando Rosales
+// Email: frosa009@ucr.edu
 // 
 // Assignment name: 
 // Lab section: 
@@ -42,8 +42,8 @@ reg[WORD_SIZE-1:0] reg2D;
 reg[4:0] writeRA;
 reg[WORD_SIZE-1:0] writeRD; 
 
-wire [WORD_SIZE-1:0] pc_in;
-wire [WORD_SIZE-1:0] pc_out; 
+wire [WORD_SIZE-1:0] pcI;
+wire [WORD_SIZE-1:0] pcO; 
 wire [WORD_SIZE-1:0] pc_add_4; 
 wire [WORD_SIZE-1:0] instr; 
 wire [WORD_SIZE-1:0] read_data1; 
@@ -56,10 +56,12 @@ wire [WORD_SIZE-1:0] alu_result;
 wire [WORD_SIZE-1:0] write_reg; 
 wire [WORD_SIZE-1:0] branch_addr; 
 wire [WORD_SIZE-1:0] imme;
-wire [4:0] write_reg1; 
-wire [4:0] write_reg2;
+
+wire [4:0] writeReg1; 
+wire [4:0] writeReg2;
 wire [1:0] alu_op;
 wire [3:0] alu_out;
+
 wire reg_dst;
 wire branch;
 wire mem_read;
@@ -69,8 +71,8 @@ wire alu_src;
 wire reg_write;
 wire zero;
 
-assign write_reg1 = instr[20:16];
-assign write_reg2 = instr[15:11];
+assign writeReg1 = instr[20:16];
+assign writeReg2 = instr[15:11];
 assign imme = {{16{instr[15]}}, instr[15:0]};
 assign branch_zero = zero & branch;
 
@@ -78,14 +80,14 @@ gen_register PC(
     .clk(clk),
     .rst(rst),
     .write_en(1'b1),
-    .data_in(pc_in),
-    .data_out(pc_out)
+    .data_in(pcI),
+    .data_out(pcO)
 );
 
 cpumemory #(.FILENAME(MEM_FILE)) instr_mem_data_mem(
     .clk(clk),
     .rst(rst),
-    .instr_read_address(pc_out[9:2]),
+    .instr_read_address(pcO[9:2]),
     .instr_instruction(instr),
     .data_mem_write(mem_write),
     .data_address(alu_result[7:0]),
@@ -95,7 +97,7 @@ cpumemory #(.FILENAME(MEM_FILE)) instr_mem_data_mem(
 
 alu pc_add(
     .alu_control_in(`ALU_ADD),
-    .channel_a_in(pc_out),
+    .channel_a_in(pcO),
     .channel_b_in(4),
     .alu_result_out(pc_add_4)
 );
@@ -114,8 +116,8 @@ control_unit control_unit(
 
 mux_2_1 mux_reg_dst(
     .select_in(reg_dst),
-    .datain1({{27{1'b0}}, write_reg1}),
-    .datain2({{27{1'b0}}, write_reg2}),
+    .datain1({{27{1'b0}}, writeReg1}),
+    .datain2({{27{1'b0}}, writeReg2}),
     .data_out(write_reg)
 );
 
@@ -163,7 +165,7 @@ mux_2_1 mux_branch(
     .select_in(branch_zero),
     .datain1(pc_add_4),
     .datain2(branch_addr),
-    .data_out(pc_in)
+    .data_out(pcI)
 );
 
 mux_2_1 mux_to_reg(
@@ -174,7 +176,7 @@ mux_2_1 mux_to_reg(
 );
 
 always @(*) begin
-   /* progC <= {pc_out[31:2], 2'b00};
+   /* progC <= {pcO[31:2], 2'b00};
     instrOP <= instr[31:26];
     reg1A <= instr[25:21];
     reg1D <= read_data1;
@@ -191,8 +193,8 @@ always @(*) begin
     reg2_data <= reg2D;
     write_reg_addr <= writeRA;
     write_reg_data <= writeRD;*/
-    
-    prog_count <= {pc_out[31:2], 2'b00};
+
+    prog_count <= {pcO[31:2], 2'b00};
     instr_opcode <= instr[31:26];
     reg1_addr <= instr[25:21];
     reg1_data <= read_data1;
@@ -202,7 +204,7 @@ always @(*) begin
     write_reg_data <= reg_write_data;  
 end
 
-    /*prog_count <= {pc_out[31:2], 2'b00};
+    /*prog_count <= {pcO[31:2], 2'b00};
     instr_opcode <= instr[31:26];
     reg1_addr <= instr[25:21];
     reg1_data <= read_data1;
